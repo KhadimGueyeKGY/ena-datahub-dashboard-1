@@ -5,11 +5,11 @@ import pandas as pd
 import plotly.express as px
 from dash.dependencies import Input, Output
 
-#### CONFIGURE ####
+#### CONFIGURATION ####
 counts = pd.read_csv('data/dcc_XXX_Cumulative_read_submissions_XXX.txt', sep="\t")
 datahub_metadata = pd.read_csv('data/dcc_XXX_ENA_Search_read_run_XXX.txt', sep="\t")
 datahub = 'dcc_XXX'
-###################
+#######################
 
 external_stylesheets = [
     {
