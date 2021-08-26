@@ -4,12 +4,14 @@ import dash_html_components as html
 import pandas as pd
 import plotly.express as px
 from dash.dependencies import Input, Output
+from scripts.plots import GeneratePlots
 
 #### CONFIGURATION ####
-counts = pd.read_csv('data/dcc_XXX_Cumulative_read_submissions_XXX.txt', sep="\t")
-datahub_metadata = pd.read_csv('data/dcc_XXX_ENA_Search_read_run_XXX.txt', sep="\t")
+date_of_data_import = 'XXXX'        # e.g. 03082021
 datahub = 'dcc_XXX'
 #######################
+
+datahub_metadata = pd.read_csv('data/{}_ENA_Search_read_run_{}.txt'.format(datahub, date_of_data_import), sep="\t")
 
 external_stylesheets = [
     {
@@ -18,6 +20,10 @@ external_stylesheets = [
         "rel": "stylesheet",
     },
 ]
+
+# Call Plots
+cumulative_submissions = GeneratePlots(datahub, date_of_data_import)
+cumulative_subs = cumulative_submissions.cumulative_line()
 
 
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
@@ -84,31 +90,9 @@ app.layout = html.Div(
             children=[
                 html.Div(
                     children=dcc.Graph(
-                        id="price-chart",
+                        id="cumulative_read_submissions",
                         config={"displayModeBar": False},
-                        figure={
-                            "data": [
-                                {
-                                    "x": counts["month_year"],
-                                    "y": counts["cumulative_submissions"],
-                                    "type": "lines",
-                                    "hovertemplate": "%{y:}"
-                                                        "<extra></extra>",
-                                },
-                            ],
-                            "layout": {
-                                "title": {
-                                    "text": "Dcc_grusin cumulative raw read data submissions count",
-                                    "x": 0.05,
-                                    "xanchor": "left",
-                                },
-                                "xaxis": {"fixedrange": True, "tickangle": 45},
-                                "yaxis": {
-                                    "fixedrange": True,
-                                },
-                                "colorway": ["#17B897"]
-                            },
-                        },
+                        figure=cumulative_subs
                     ),
                     className="card",
                 ),
