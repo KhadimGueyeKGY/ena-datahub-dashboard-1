@@ -23,3 +23,15 @@ The dashboard has been created in [Python Dash](https://dash.plotly.com/introduc
 
 ### Requirements
 
+- [Python 3.6+](https://www.python.org/downloads/)
+- [Python Dash](https://dash.plotly.com/installation)
+- [Python Pandas](https://pandas.pydata.org/docs/getting_started/install.html)
+- [Python Plotly](https://plotly.com/python/getting-started/#installation)
+- [requests](https://docs.python-requests.org/en/master/user/install/)
+
+### Files
+- <b>scripts/data_import.py</b> - Includes a class object which handles all data downloaded and required to create plots off of. The output is stored in the `data` directory.
+- <b>scripts/visualisation_prep.py</b> - Run this script to coordinate the data download and generation of customised dataframe(s) for plots in the application.
+- <b>scripts/plots.py</b> - Includes a class object which handles creation of certain plot(s), that is called when `python app.py` is run.
+- <b>assets</b> - Contains all styling-related files.
+
