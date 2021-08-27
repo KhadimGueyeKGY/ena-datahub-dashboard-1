@@ -27,6 +27,8 @@ The dashboard has been created in [Python Dash](https://dash.plotly.com/introduc
 - [Python Dash](https://dash.plotly.com/installation)
 - [Python Pandas](https://pandas.pydata.org/docs/getting_started/install.html)
 - [Python Plotly](https://plotly.com/python/getting-started/#installation)
+- [pycountry](https://pypi.org/project/pycountry/)
+- [pycountry-convert](https://pypi.org/project/pycountry-convert/)
 - [requests](https://docs.python-requests.org/en/master/user/install/)
 
 ### Files

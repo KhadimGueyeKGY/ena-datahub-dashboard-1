@@ -6,8 +6,9 @@ import plotly.express as px
 from dash.dependencies import Input, Output
 from scripts.plots import GeneratePlots
 
+
 #### CONFIGURATION ####
-date_of_data_import = 'XXXX'        # e.g. 03082021
+date_of_data_import = 'XXX'        # e.g. 03082021
 datahub = 'dcc_XXX'
 #######################
 
@@ -22,8 +23,11 @@ external_stylesheets = [
 ]
 
 # Call Plots
-cumulative_submissions = GeneratePlots(datahub, date_of_data_import)
-cumulative_subs = cumulative_submissions.cumulative_line()
+plots = GeneratePlots(datahub, date_of_data_import)
+
+datahub_stats = plots.return_stats()        # Data hub general statistics HTML object
+cumulative_subs = plots.cumulative_line()       # Cumulative submissions line graph
+sub_map = plots.submissions_map()       # Submissions map
 
 
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
@@ -49,42 +53,21 @@ app.layout = html.Div(
         html.Div(
             children=[
                 html.Div(
-                    children=[
-                        html.Div(
-                            children=[
-                                html.H2(children=len(datahub_metadata),
-                                ),
-                                html.P(children="Total raw sequence datasets",
-                                       className="banner-title"
-                                ),
-                            ],
-                            className="tile",
-                        ),
-                        html.Div(
-                            children=[
-                                html.H2(children=datahub_metadata['instrument_platform'].nunique(),
-                                ),
-                                html.P(children="Total sequencing platforms",
-                                       className="banner-title"
-                                ),
-                            ],
-                            className="tile",
-                        ),
-                        html.Div(
-                            children=[
-                                html.H2(children=datahub_metadata['instrument_model'].nunique(),
-                                ),
-                                html.P(children="Total sequencing platform models",
-                                       className="banner-title"
-                                ),
-                            ],
-                            className="tile",
-                        ),
-                    ],
+                    children=datahub_stats,
                     className="tiles",
                 ),
             ],
             className="banner",
+        ),
+        html.Div(
+            html.Div(
+                children=dcc.Graph(
+                    id="submissions_map",
+                    figure=sub_map
+                ),
+                className="large-card",
+            ),
+            className='wide-wrapper'
         ),
         html.Div(
             children=[

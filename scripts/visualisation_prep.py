@@ -31,15 +31,34 @@ def get_args():
     return args
 
 class prepDf:
+    """
+    Prepare dataframes to form basis of plots
+    """
     def __init__(self, date_today, args):
         self.date_today = date_today
         self.args = args
+        self.read_data = pd.read_csv('data/{}_ENA_Search_read_run_{}.txt'.format(self.args.username, self.date_today), sep="\t")
+
+    def datahub_stats(self):
+        """
+        Create a dataframe of data hub stats for the application
+        :return:
+        """
+        datahub_stats = pd.DataFrame()
+        stats = pd.DataFrame([['Total raw sequence datasets', len(self.read_data)],
+                              ['Total sequencing platforms', self.read_data['instrument_platform'].nunique()],
+                              ['Total sequencing platform models', self.read_data['instrument_model'].nunique()]],
+                              columns=['field', 'value'], index=[0, 1, 2])
+        datahub_stats = datahub_stats.append(stats, ignore_index=True)
+        datahub_stats.to_csv('data/{}_Datahub_stats_{}.txt'.format(self.args.username, self.date_today), sep="\t", index=False)
 
     def submission_count(self):
-        read_data = pd.read_csv('data/{}_ENA_Search_read_run_{}.txt'.format(self.args.username, self.date_today), sep="\t")     # Read in read submission information for the data hub
-
+        """
+        Create a cumulative submissions dataframe
+        :return:
+        """
         # Remove the day from the column values
-        first_created = read_data[['first_created']]        # Grab the first_created column
+        first_created = self.read_data[['first_created']]        # Grab the first_created column
         first_created['first_created'] = first_created['first_created'].str[:-3]        # Remove the day from the first_created column values
 
         counts = first_created['first_created'].value_counts(sort=False).rename_axis('first_created').reset_index(name='submissions')       # Create a count for each month's submissions
@@ -56,6 +75,10 @@ class prepDf:
         final_counts.to_csv('data/{}_Cumulative_read_submissions_{}.txt'.format(self.args.username, self.date_today), sep="\t", index=False)
 
     def create_dfs(self):
+        """
+        Create all dataframes required for the application plots
+        :return:
+        """
         # Get ENA read data within the datahub
         data_retrieval = retrieve_data(ena_searches['datahub'], self.args.username,
                                        self.args.password)  # Instantiate class with information
@@ -64,11 +87,14 @@ class prepDf:
         # Create a cumulative submissions dataframe
         prepDf.submission_count(self)
 
+        # Obtain statistics for data hub
+        prepDf.datahub_stats(self)
+
 
 if __name__ == '__main__':
     today = datetime.now()
     date = today.strftime('%d%m%Y')
 
-    args = get_args()
-    prepare_dfs = prepDf(date, args)
+    args = get_args()       # Obtain script arguments
+    prepare_dfs = prepDf(date, args)        # Instantiate preparation of dataframe
     prepare_dfs.create_dfs()
