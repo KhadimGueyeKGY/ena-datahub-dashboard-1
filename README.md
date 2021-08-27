@@ -37,3 +37,4 @@ The dashboard has been created in [Python Dash](https://dash.plotly.com/introduc
 - <b>scripts/plots.py</b> - Includes a class object which handles creation of certain plot(s), that is called when `python app.py` is run.
 - <b>assets</b> - Contains all styling-related files.
 
+![alt text](https://github.com/nadimm-rahman/ena-datahub-dashboard/blob/main/assets/example.png?raw=true)
