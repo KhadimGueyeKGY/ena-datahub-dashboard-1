@@ -10,7 +10,7 @@ from data_import import retrieve_data
 
 months = {1: 'January', 2: 'February', 3: 'March', 4: 'April', 5: 'May', 6: 'June', 7: 'July', 8: 'August', 9: 'September', 10: 'October', 11: 'November', 12: 'December'}
 ena_searches = {
-    'datahub': {'search_fields': ['experiment_accession', 'study_accession', 'study_title', 'sample_accession', 'experiment_title', 'country', 'collection_date', 'center_name', 'tax_id', 'scientific_name', 'instrument_platform', 'instrument_model', 'library_layout', 'library_name', 'library_selection', 'library_source', 'library_strategy', 'first_public', 'first_created'], 'result_type': 'read_run', 'data_portal': 'pathogen', 'authentication': 'True'}
+    'run': {'search_fields': ['experiment_accession', 'study_accession', 'study_title', 'sample_accession', 'experiment_title', 'country', 'collection_date', 'center_name', 'tax_id', 'scientific_name', 'instrument_platform', 'instrument_model', 'library_layout', 'library_name', 'library_selection', 'library_source', 'library_strategy', 'first_public', 'first_created'], 'result_type': 'read_run', 'data_portal': 'pathogen', 'authentication': 'True'}
 }
 
 def get_args():
@@ -37,7 +37,6 @@ class prepDf:
     def __init__(self, date_today, args):
         self.date_today = date_today
         self.args = args
-        self.read_data = pd.read_csv('data/{}_ENA_Search_read_run_{}.txt'.format(self.args.username, self.date_today), sep="\t")
 
     def datahub_stats(self):
         """
@@ -47,8 +46,9 @@ class prepDf:
         datahub_stats = pd.DataFrame()
         stats = pd.DataFrame([['Total raw sequence datasets', len(self.read_data)],
                               ['Total sequencing platforms', self.read_data['instrument_platform'].nunique()],
-                              ['Total sequencing platform models', self.read_data['instrument_model'].nunique()]],
-                              columns=['field', 'value'], index=[0, 1, 2])
+                              ['Total sequencing platform models', self.read_data['instrument_model'].nunique()],
+                              ['Data Providers (Collaborators)', self.read_data['center_name'].nunique()]],
+                              columns=['field', 'value'], index=[0, 1, 2, 3])
         datahub_stats = datahub_stats.append(stats, ignore_index=True)
         datahub_stats.to_csv('data/{}_Datahub_stats_{}.txt'.format(self.args.username, self.date_today), sep="\t", index=False)
 
@@ -80,21 +80,26 @@ class prepDf:
         :return:
         """
         # Get ENA read data within the datahub
-        data_retrieval = retrieve_data(ena_searches['datahub'], self.args.username,
+        for key, value in ena_searches.items():
+            data_retrieval = retrieve_data(ena_searches[key], self.args.username,
                                        self.args.password)  # Instantiate class with information
-        ena_results = data_retrieval.coordinate_retrieval()
+            self.read_data = data_retrieval.coordinate_retrieval()
 
+        print('> Creating additional custom dataframes...')
         # Create a cumulative submissions dataframe
         prepDf.submission_count(self)
 
         # Obtain statistics for data hub
         prepDf.datahub_stats(self)
+        print('> Creating additional custom dataframes... [DONE]')
 
 
 if __name__ == '__main__':
+    print('---> Downloading data and creating dataframes...')
     today = datetime.now()
     date = today.strftime('%d%m%Y')
 
     args = get_args()       # Obtain script arguments
     prepare_dfs = prepDf(date, args)        # Instantiate preparation of dataframe
     prepare_dfs.create_dfs()
+    print('---> Downloading data and creating dataframes... [COMPLETED]')

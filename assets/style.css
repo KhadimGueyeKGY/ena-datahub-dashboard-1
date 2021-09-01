@@ -94,11 +94,11 @@ body {
 }
 
 .tiles {
-    width: 600px;
+    width: 800px;
     margin: 0 auto;
 }
 
 .tile {
-    width: calc(600px / 3);
+    width: calc(800px / 4);
     display: inline-block;
 }

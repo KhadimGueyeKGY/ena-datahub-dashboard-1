@@ -8,10 +8,6 @@ import pandas as pd
 import argparse, datetime, io, os, requests
 
 
-ena_searches = {
-    'datahub': {'search_fields': ['experiment_accession', 'study_accession', 'study_title', 'sample_accession', 'experiment_title', 'country', 'collection_date', 'center_name', 'tax_id', 'scientific_name', 'instrument_platform', 'instrument_model', 'library_layout', 'library_name', 'library_selection', 'library_source', 'library_strategy', 'first_public', 'first_created'], 'result_type': 'read_run', 'data_portal': 'pathogen', 'authentication': 'True'}
-}
-
 def get_args():
     """
     Handle script arguments
@@ -33,7 +29,7 @@ def get_args():
 
 # Dictionary containing all the search criteria for the CoV data types
 ena_searches = {
-    'datahub': {'search_fields': ['experiment_accession', 'study_accession', 'study_title', 'sample_accession', 'experiment_title', 'country', 'collection_date', 'center_name', 'tax_id', 'scientific_name', 'instrument_platform', 'instrument_model', 'library_layout', 'library_name', 'library_selection', 'library_source', 'library_strategy', 'first_public', 'first_created'], 'result_type': 'read_run', 'data_portal': 'pathogen', 'authentication': 'True'}
+    'run': {'search_fields': ['experiment_accession', 'study_accession', 'study_title', 'sample_accession', 'experiment_title', 'country', 'collection_date', 'center_name', 'tax_id', 'scientific_name', 'instrument_platform', 'instrument_model', 'library_layout', 'library_name', 'library_selection', 'library_source', 'library_strategy', 'first_public', 'first_created'], 'result_type': 'read_run', 'data_portal': 'pathogen', 'authentication': 'True'}
 }
 
 class retrieve_data:
@@ -88,6 +84,7 @@ class retrieve_data:
         """
         today = datetime.date.today()
         date = today.strftime('%d%m%Y')
+        print('> Running data request... [{}]'.format(datetime.datetime.now()))
         if 'authentication' in self.ena_search.keys():
             # If there is an authentication flag for the result type to search for
             self.ena_search_params = retrieve_data.build_request_params(dataPortal=self.ena_search['data_portal'],
@@ -108,6 +105,7 @@ class retrieve_data:
         self.ena_results = pd.read_csv(io.StringIO(self.ena_search_result.content.decode('UTF-8')), sep="\t")      # Save results in a dataframe
         output_file = os.path.join('data', '{}_ENA_Search_{}_{}.txt'.format(self.username, self.ena_search['result_type'], date))
         self.ena_results.to_csv(output_file, sep="\t", index=False)      # Save search results to a dataframe
+        print('> Running data request... [DONE] [{}]'.format(datetime.datetime.now()))
         return self.ena_results
 
 
@@ -118,5 +116,6 @@ if __name__ == '__main__':
     date = today.strftime('%d%m%Y')
 
     # Get ENA read data within the datahub
-    data_retrieval = retrieve_data(ena_searches['datahub'], args.username, args.password)     # Instantiate class with information
-    ena_results = data_retrieval.coordinate_retrieval()
+    for key, value in ena_searches.items():
+        data_retrieval = retrieve_data(ena_searches[key], args.username, args.password)     # Instantiate class with information
+        ena_results = data_retrieval.coordinate_retrieval()

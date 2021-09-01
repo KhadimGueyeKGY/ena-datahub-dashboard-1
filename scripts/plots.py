@@ -9,6 +9,7 @@ import plotly.graph_objects as go
 import pycountry as pc
 import dash_html_components as html
 import pycountry_convert as pcc
+import plotly.express as px
 
 
 class GeneratePlots:
@@ -18,6 +19,7 @@ class GeneratePlots:
     def __init__(self, datahub, date):
         self.datahub = datahub      # Name of data hub
         self.date_today = date      # Date (e.g. 03082021)
+        self.read_run = pd.read_csv('data/{}_ENA_Search_read_run_{}.txt'.format(self.datahub, self.date_today), sep="\t")
 
     def return_stats(self):
         """
@@ -88,8 +90,7 @@ class GeneratePlots:
             'State of Palestine': 'PSE', 'Iran': 'IRN', 'West Bank': 'PSE'
         }
 
-        read_run = pd.read_csv('data/{}_ENA_Search_read_run_{}.txt'.format(self.datahub, self.date_today), sep="\t")
-        ena_df = read_run[['run_accession', 'country', 'first_public']]
+        ena_df = self.read_run[['run_accession', 'country', 'first_public']]
 
         # fetch ISO3 codes and counts for each country
         # and apply relevant filters
@@ -142,3 +143,12 @@ class GeneratePlots:
         map.update_layout(mapbox_style="carto-positron",  mapbox_zoom=3, mapbox_center = {"lat": 50, "lon": 4})
         map.update_layout(margin={"r":10,"t":10,"l":10,"b":10}, coloraxis_colorbar_x=-0.15, height=650)
         return map
+
+    def datahub_pie(self, variable):
+        """
+        Creates pie chart describing data hub holdings [INTERACTIVE]
+        :param variable: The variable to create a pie chart on
+        :return: Pie chart object
+        """
+        fig = px.pie(self.read_run, names=variable, title="<b>Data hub holdings composition: {}</b>".format(variable.replace("_", " ").capitalize()))
+        return fig
