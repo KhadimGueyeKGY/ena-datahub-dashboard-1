@@ -11,6 +11,7 @@ import dash_html_components as html
 import pycountry_convert as pcc
 import plotly.express as px
 
+continent_codes = {'EU': 'europe', 'AS': 'asia', 'AF': 'africa', 'NA': 'north america', 'SA': 'south america'}      # Note this is not a full list, these are continents that are within the scope of the Cholorpleth maps
 
 class GeneratePlots:
     """
@@ -71,6 +72,34 @@ class GeneratePlots:
         )
         return cumulative_subs
 
+    def get_continents(self, country_info):
+        """
+        Get the continent data to see if the map plot needs to focus to a region
+        :param country_info: The country information dictionary to be used for the plot
+        :return: Whether a focused plot needs to be produced
+        """
+        # Get a dictionary of alpha 2 codes in order to convert to continents
+        countries = {}
+        for country in pc.countries:
+            countries[country.name] = country.alpha_2
+        codes = [countries.get(country, 'Unknown code') for country in country_info.keys()]     # Assign alpha 2 codes for the data to be plotted
+
+        continents = []
+        for code in codes:
+            if code != "Unknown code":
+                try:
+                    continent = pcc.country_alpha2_to_continent_code(code)
+                except:
+                    continue
+                continents.append(continent)
+        continents = list(set(continents))      # Remove duplicates
+        if len(continents) > 1:
+            return True     # There is data from multiple continents in the dataset
+        elif len(continents) == 1:
+            return continents[0]        # There is data from one continent in the dataset
+        elif len(continents) == 0:
+            return True     # We don't necessarily know what is in the data, default to the large map
+
     def submissions_map(self):
         """
         Create a map of submissions
@@ -119,6 +148,9 @@ class GeneratePlots:
             except KeyError:
                 map_data[country] = [this_country_code, 1]
 
+        # get continents in data to identify whether a continent-zoomed in map is sufficient
+        continents = self.get_continents(map_data)     # True (for when there are multiple or no known continents) OR continent name (for when only one continent)
+
         # format the data  specifically for map display
         for country in map_data:
             country_code, country_count = map_data[country]
@@ -142,6 +174,10 @@ class GeneratePlots:
         ))
         map.update_layout(mapbox_style="carto-positron",  mapbox_zoom=3, mapbox_center = {"lat": 50, "lon": 4})
         map.update_layout(margin={"r":10,"t":10,"l":10,"b":10}, coloraxis_colorbar_x=-0.15, height=650)
+
+        if continents is not True and continents in continent_codes:
+            scope = continent_codes.get(continents)
+            map.update_geos(scope=scope)
         return map
 
     def datahub_pie(self, variable):
