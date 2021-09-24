@@ -1,13 +1,14 @@
 import dash
 import dash_core_components as dcc
+import dash_bootstrap_components as dbc
 import dash_html_components as html
 from dash.dependencies import Input, Output
 from scripts.plots import GeneratePlots
 
 
 #### CONFIGURATION ####
-date_of_data_import = 'XXXX'        # e.g. 03082021
-datahub = 'dcc_XXXX'
+date_of_data_import = 'XXX'        # e.g. 03082021
+datahub = 'dcc_XXX'
 #######################
 
 
@@ -17,6 +18,7 @@ external_stylesheets = [
                 "family=Lato:wght@400;700&display=swap",
         "rel": "stylesheet",
     },
+    dbc.themes.BOOTSTRAP
 ]
 
 
@@ -36,23 +38,30 @@ app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 app.title = "Data Hubs Dashboard"
 
 app.layout = html.Div(
-    children=[
-        html.Div(
-            children=[
-                html.H1(children="Data Hub Dashboard",
-                        className="header-title"
+    [
+        # Top Title Banner #
+        dbc.Row(
+            dbc.Col(
+                html.Div(
+                    children=[
+                        html.H1(children="Data Hub Dashboard",
+                                className="header-title"
+                        ),
+                        html.H3(children=datahub,
+                                className="sub-header",
+                        ),
+                        html.P(
+                            children="This dashboard presents information related to your data hub.",
+                            className="header-description",
+                        ),
+                    ],
+                    className="header"
                 ),
-                html.H3(children=datahub,
-                        className="sub-header",
-                ),
-                html.P(
-                    children="This dashboard presents information related to your data hub.",
-                    className="header-description",
-                ),
-            ],
-            className="header",
+                width=12
+            )
         ),
-        html.Div(
+        # Statistics Banner #
+        dbc.Row(
             children=[
                 html.Div(
                     children=datahub_stats,
@@ -61,54 +70,73 @@ app.layout = html.Div(
             ],
             className="banner",
         ),
-        html.Div(
-            html.Div(
-                children=dcc.Graph(
-                    id="submissions_map",
-                    figure=sub_map
-                ),
-                className="large-card",
-            ),
-            className='wide-wrapper'
-        ),
-        html.Div(
-            html.Div(
+        # Submissions Map #
+        dbc.Row(
+            dbc.Col(
                 children=[
+                    html.Div(
+                        html.Div(
+                            children=dcc.Graph(
+                                id="submissions_map",
+                                figure=sub_map
+                            ),
+                            className="large-card"
+                        ),
+                        className="wide-wrapper",
+                    )
+                ],
+                width=12
+            )
+        ),
+        # Cumulative Read Submissions Plot #
+        dbc.Row(
+            [
+                dbc.Col(
                     html.Div(
                         children=dcc.Graph(
                             id="cumulative_read_submissions",
                             config={"displayModeBar": False},
                             figure=cumulative_subs
                         ),
-                        className="card",
                     ),
+                    className="card",
+                    width=6,
+                ),
+                dbc.Col(
                     html.Div(
                         children=[
                             dcc.Dropdown(
                                 id="variable",
                                 value="instrument_platform",
                                 options=[{'value': x, 'label': x.replace("_", " ").capitalize()}
-                                         for x in ['instrument_platform', 'library_selection', 'library_source', 'library_strategy']],
+                                        for x in ['instrument_platform', 'library_selection', 'library_source', 'library_strategy']],
                                 clearable=False
-                                ),
+                            ),
                             dcc.Graph(id="pie-chart"),
-                            ],
-                        className="card",
+                        ],
                     ),
-                ],
-            ),
-            className="wrapper",
-        ),
-        html.Div(
-            children=[
-                html.P(
-                    children="Powered by",
-                    className="header-description",
-                ),
+                    className="card",
+                    width=6,
+                )
             ],
-            className="footer",
+            className="row-two"
         ),
-    ],
+        # Footer Banner #
+        dbc.Row(
+            dbc.Col(
+                html.Div(
+                    children=[
+                        html.P(
+                            children="Powered by",
+                            className="header-description",
+                        )
+                    ],
+                    className="footer"
+                ),
+                width=12
+            )
+        )
+    ]
 )
 
 
