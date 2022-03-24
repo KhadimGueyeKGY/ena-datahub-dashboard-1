@@ -14,7 +14,7 @@ The dashboard has been created in [Python Dash](https://dash.plotly.com/introduc
 
 `python scripts/visualisation_prep.py -u dcc_grusin -p <PASSWORD>`
 
-4. Configure the application script, but completing the 'CONFIGURATION' section at the top of `app.py`.
+4. Include configuration fields within `config.yaml`. An example has been included within the file.
 
 5. Good to go! Run the application:
 

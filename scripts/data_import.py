@@ -29,7 +29,8 @@ def get_args():
 
 # Dictionary containing all the search criteria for the CoV data types
 ena_searches = {
-    'run': {'search_fields': ['experiment_accession', 'study_accession', 'study_title', 'sample_accession', 'experiment_title', 'country', 'collection_date', 'center_name', 'tax_id', 'scientific_name', 'instrument_platform', 'instrument_model', 'library_layout', 'library_name', 'library_selection', 'library_source', 'library_strategy', 'first_public', 'first_created'], 'result_type': 'read_run', 'data_portal': 'pathogen', 'authentication': 'True'}
+    'run': {'search_fields': ['experiment_accession', 'study_accession', 'study_title', 'sample_accession', 'experiment_title', 'country', 'collection_date', 'center_name', 'broker_name', 'tax_id', 'scientific_name', 'instrument_platform', 'instrument_model', 'library_layout', 'library_name', 'library_selection', 'library_source', 'library_strategy', 'first_public', 'first_created'], 'result_type': 'read_run', 'data_portal': 'pathogen', 'authentication': 'True'},
+    'analysis': {'search_fields': ['analysis_accession', 'analysis_title', 'analysis_type', 'study_accession', 'study_title', 'sample_accession', 'center_name', 'first_public', 'first_created', 'tax_id', 'scientific_name', 'pipeline_name', 'pipeline_version', 'country', 'collection_date'], 'result_type': 'analysis', 'data_portal': 'pathogen', 'authentication': 'True'}
 }
 
 class retrieve_data:

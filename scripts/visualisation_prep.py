@@ -4,13 +4,13 @@
 __author__ = 'Nadim Rahman'
 
 import pandas as pd
-import argparse, requests
-from datetime import datetime
+import argparse, datetime, requests
 from data_import import retrieve_data
 
 months = {1: 'January', 2: 'February', 3: 'March', 4: 'April', 5: 'May', 6: 'June', 7: 'July', 8: 'August', 9: 'September', 10: 'October', 11: 'November', 12: 'December'}
 ena_searches = {
-    'run': {'search_fields': ['experiment_accession', 'study_accession', 'study_title', 'sample_accession', 'experiment_title', 'country', 'collection_date', 'center_name', 'tax_id', 'scientific_name', 'instrument_platform', 'instrument_model', 'library_layout', 'library_name', 'library_selection', 'library_source', 'library_strategy', 'first_public', 'first_created'], 'result_type': 'read_run', 'data_portal': 'pathogen', 'authentication': 'True'}
+    'read_run': {'search_fields': ['experiment_accession', 'study_accession', 'study_title', 'sample_accession', 'experiment_title', 'country', 'collection_date', 'center_name', 'broker_name', 'tax_id', 'scientific_name', 'instrument_platform', 'instrument_model', 'library_layout', 'library_name', 'library_selection', 'library_source', 'library_strategy', 'first_public', 'first_created'], 'result_type': 'read_run', 'data_portal': 'pathogen', 'authentication': 'True'},
+    'analysis': {'search_fields': ['analysis_accession', 'analysis_title', 'analysis_type', 'study_accession', 'study_title', 'sample_accession', 'center_name', 'first_public', 'first_created', 'tax_id', 'scientific_name', 'pipeline_name', 'pipeline_version', 'country', 'collection_date'], 'result_type': 'analysis', 'data_portal': 'pathogen', 'authentication': 'True'}
 }
 
 def get_args():
@@ -22,7 +22,7 @@ def get_args():
                                      epilog="""
         + =========================================================== +
         |  ENA Data Hubs Dashboard: visualisation_prep.py             |
-        |  Python script to create custom dataframes                                            |    
+        |  Python script to create custom dataframes                  |    
         + =========================================================== +
         """)
     parser.add_argument('-u', '--username', help='Data Hub username (e.g. dcc_XXXXX)', type=str, required=True)
@@ -38,41 +38,55 @@ class prepDf:
         self.date_today = date_today
         self.args = args
 
-    def datahub_stats(self):
+    def add_datahub_stats(self, stats, result_type):
         """
         Create a dataframe of data hub stats for the application
         :return:
         """
-        datahub_stats = pd.DataFrame()
-        stats = pd.DataFrame([['Total raw sequence datasets', len(self.read_data)],
-                              ['Total sequencing platforms', self.read_data['instrument_platform'].nunique()],
-                              ['Total sequencing platform models', self.read_data['instrument_model'].nunique()],
-                              ['Data Providers (Collaborators)', self.read_data['center_name'].nunique()]],
-                              columns=['field', 'value'], index=[0, 1, 2, 3])
-        datahub_stats = datahub_stats.append(stats, ignore_index=True)
-        datahub_stats.to_csv('data/{}_Datahub_stats_{}.txt'.format(self.args.username, self.date_today), sep="\t", index=False)
+        if result_type == 'read_run':
+            stats['Total raw sequence datasets'] = len(self.data)
+            stats['Total sequencing platforms'] = self.data['instrument_platform'].nunique()
+            stats['Total sequencing platform models'] = self.data['instrument_model'].nunique()
+            stats['Data Providers (Collaborators)'] = self.data['center_name'].nunique()
+        elif result_type == 'analysis':
+            stats['Total analyses'] = len(self.data)
+            stats['Analysis pipelines'] = self.data['pipeline_name'].nunique()
+        return stats
 
-    def submission_count(self):
+    def create_earliest_row(self, df, cols, result_type):
+        # Identify earliest date and set to 0
+        earliest = df['first_created'].iloc[0] + '-01'
+        earliest = datetime.datetime.strptime(earliest, '%Y-%m-%d')
+        lastMonth = earliest - datetime.timedelta(days=1)
+        lastMonth = str(lastMonth.date())[:-3]
+
+        # Create a new row of data and add to the first row of the data frame
+        row = pd.DataFrame([[lastMonth, 0, 0, result_type]], columns=cols)
+        updated_df = pd.concat([row, df]).reset_index(drop=True)
+        return updated_df
+
+    def submission_count(self, result_types):
         """
         Create a cumulative submissions dataframe
         :return:
         """
-        # Remove the day from the column values
-        first_created = self.read_data[['first_created']]        # Grab the first_created column
-        first_created['first_created'] = first_created['first_created'].str[:-3]        # Remove the day from the first_created column values
+        cols = ['first_created', 'submissions', 'cumulative_submissions', 'result_type']
+        total_counts = pd.DataFrame(columns=cols)
+        for result_type in result_types:
+            df = pd.read_csv('data/{}_ENA_Search_{}_{}.txt'.format(self.args.username, result_type, self.date_today), sep="\t")
+            first_created = df[['first_created']]           # Grab the first_created column
+            first_created['first_created'] = first_created['first_created'].str[:-3]            # Remove the day from the first_created column values
 
-        counts = first_created['first_created'].value_counts(sort=False).rename_axis('first_created').reset_index(name='submissions')       # Create a count for each month's submissions
-        counts['first_created'] = pd.to_datetime(counts["first_created"])       # Configure the column as a datetime
-        counts = counts.sort_values(by='first_created')     # Sort by the date records were first created/submitted
-        counts['cumulative_submissions'] = counts['submissions'].cumsum()       # Add a cumulative submission count column
+            counts = first_created['first_created'].value_counts(sort=True).rename_axis('first_created').reset_index(name='submissions'.format(result_type))           # Create a count for each month's submissions
+            counts = counts.sort_values(by='first_created')             # Sort by the first_created column to calculate cumulative sum appropriately
+            counts['cumulative_submissions'.format(result_type)] = counts['submissions'.format(result_type)].cumsum()
 
-        # Do some tidying up - adding name of months and changing column headers slightly
-        final_counts = {}
-        for index, row in counts.iterrows():
-            month_year = months.get(row[0].month) + " " + str(row[0].year)
-            final_counts[index] = [month_year, row[1], row[2]]
-        final_counts = pd.DataFrame.from_dict(final_counts, orient='index', columns=['month_year', 'submissions', 'cumulative_submissions'])
-        final_counts.to_csv('data/{}_Cumulative_read_submissions_{}.txt'.format(self.args.username, self.date_today), sep="\t", index=False)
+            counts = self.create_earliest_row(counts, cols, result_type)            # Insert a row for the month of 0 submissions
+            counts['result_type'] = result_type
+
+            total_counts = pd.concat([total_counts, counts], ignore_index=True)
+        total_counts.to_csv('data/{}_cumulative_submissions_{}.txt'.format(self.args.username, self.date_today), sep="\t", index=False)
+        return total_counts
 
     def create_dfs(self):
         """
@@ -80,23 +94,33 @@ class prepDf:
         :return:
         """
         # Get ENA read data within the datahub
+        datahub_statistics = {}
         for key, value in ena_searches.items():
             data_retrieval = retrieve_data(ena_searches[key], self.args.username,
                                        self.args.password)  # Instantiate class with information
-            self.read_data = data_retrieval.coordinate_retrieval()
+            self.data = data_retrieval.coordinate_retrieval()
 
-        print('> Creating additional custom dataframes...')
+            # Obtain statistics for data hub
+            datahub_statistics = prepDf.add_datahub_stats(self, datahub_statistics, key)
+
+        # Convert the dictionary and save as a dataframe
+        print('> Creating finalised data hub statistics data frame...')
+        datahub_items = list(datahub_statistics.items())
+        datahub_stats = pd.DataFrame(datahub_items, columns=['field', 'value'], index=[0, 1, 2, 3, 4, 5])
+        datahub_stats.to_csv('data/{}_Datahub_stats_{}.txt'.format(self.args.username, self.date_today), sep="\t",
+                             index=False)
+        print('> Creating finalised data hub statistics data frame... [DONE]')
+
         # Create a cumulative submissions dataframe
-        prepDf.submission_count(self)
+        print('> Creating counts data frame...')
+        counts = prepDf.submission_count(self, ena_searches.keys())
+        print('> Creating counts data frame... [DONE]')
 
-        # Obtain statistics for data hub
-        prepDf.datahub_stats(self)
-        print('> Creating additional custom dataframes... [DONE]')
 
 
 if __name__ == '__main__':
     print('---> Downloading data and creating dataframes...')
-    today = datetime.now()
+    today = datetime.datetime.now()
     date = today.strftime('%d%m%Y')
 
     args = get_args()       # Obtain script arguments
