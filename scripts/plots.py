@@ -20,7 +20,13 @@ class GeneratePlots:
     def __init__(self, datahub, date):
         self.datahub = datahub      # Name of data hub
         self.date_today = date      # Date (e.g. 03082021)
-        self.read_run = pd.read_csv('data/{}_ENA_Search_read_run_{}.txt'.format(self.datahub, self.date_today), sep="\t")
+        self.read_run = pd.read_csv('data/{}_ENA_Search_read_run_{}.txt'.format(self.datahub, self.date_today),
+                                    sep="\t")
+        self.counts = pd.read_csv('data/{}_cumulative_submissions_{}.txt'.format(self.datahub, self.date_today), sep="\t")
+
+        # Edit the data hub name to ensure it is in the format 'DCC_[A-Z][a-z]+'
+        datahub_edited = self.datahub.split("_")
+        self.datahub_edited = datahub_edited[0].replace('dcc', 'DCC') + "_" + datahub_edited[1][0].upper() + datahub_edited[1][1:]         # Convert lowercase to uppercase for 'dcc' and first letter of datahub name
 
     def return_stats(self):
         """
@@ -43,34 +49,33 @@ class GeneratePlots:
             )
         return children
 
-    def cumulative_line(self):
+    def submissions(self):
         """
-        Create a line graph of cumulative read submissions
-        :return: Line graph figure object
+        Create a stacked line graph for raw number of submissions
+        :return: Stacked line graph object for the raw number of submissions
         """
-        counts = pd.read_csv('data/{}_Cumulative_read_submissions_{}.txt'.format(self.datahub, self.date_today), sep="\t")      # Read in cumulative read submissions data
+        stacked_raw_subs = px.line(self.counts, x='first_created', y='submissions', color='result_type', markers=True,
+                                   title='<b>Raw Number of Submissions per Month for {}</b>'.format(self.datahub_edited),
+                                   labels={
+                                       'first_created': 'Month/Year',
+                                       'submissions': 'No. of Submissions',
+                                       'result_type': 'Type of Data'
+                                   })
+        return stacked_raw_subs
 
-        # Edit the data hub name to ensure it is in the format 'DCC_[A-Z][a-z]+'
-        datahub_edited = self.datahub.split("_")
-        datahub_edited = datahub_edited[0].replace('dcc', 'DCC') + "_" + datahub_edited[1][0].upper() + datahub_edited[1][1:]       # Convert lowercase to uppercase for 'dcc' and first letter of datahub name
-
-        cumulative_subs = go.Figure(data=go.Scatter(
-            x=counts.month_year, y=counts.cumulative_submissions, line=dict(color='firebrick', width=4)
-        ))
-        cumulative_subs.update_layout(
-            title='<b>{} Cumulative Raw Read Sequence Submissions</b>'.format(datahub_edited),
-            height=600
-        )
-        cumulative_subs.update_xaxes(
-            tickangle=45,
-            title_text='Month and Year',
-            title_font={"size": 15}
-        )
-        cumulative_subs.update_yaxes(
-            title_text='Total Submissions',
-            title_font={"size": 15}
-        )
-        return cumulative_subs
+    def cumulative_submissions(self):
+        """
+        Create a stacked line graph for cumulative number of submissions
+        :return: Stacked line graph object for the cumulative number of submissions
+        """
+        stacked_cum_subs = px.line(self.counts, x='first_created', y='cumulative_submissions', color='result_type', markers=True,
+                                   title='<b>Cumulative Number of Submissions per Month for {}</b>'.format(self.datahub_edited),
+                                   labels={
+                                       'first_created': 'Month/Year',
+                                       'cumulative_submissions': 'No. of Cumulative Submissions',
+                                       'result_type': 'Type of Data'
+                                   })
+        return stacked_cum_subs
 
     def get_continents(self, country_info):
         """

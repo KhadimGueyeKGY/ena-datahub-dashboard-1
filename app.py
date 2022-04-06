@@ -1,15 +1,9 @@
-import dash
+import dash, yaml
 import dash_core_components as dcc
 import dash_bootstrap_components as dbc
 import dash_html_components as html
 from dash.dependencies import Input, Output
 from scripts.plots import GeneratePlots
-
-
-#### CONFIGURATION ####
-date_of_data_import = 'XXX'        # e.g. 03082021
-datahub = 'dcc_XXX'
-#######################
 
 
 external_stylesheets = [
@@ -22,13 +16,21 @@ external_stylesheets = [
 ]
 
 
+#----------[ Configuration ]----------#
+config_file = 'config.yaml'
+with open(config_file) as f:
+    configuration = yaml.safe_load(f)           # DATA_IMPORT must be in format 'DDMMYYYY'
+
+
 #----------[ Data Definition and Figure Generation ]----------#
 
-plots = GeneratePlots(datahub, date_of_data_import)
+plots = GeneratePlots(configuration['DATAHUB'], configuration['DATA_IMPORT'])
 
 datahub_stats = plots.return_stats()        # Data hub general statistics HTML object
-cumulative_subs = plots.cumulative_line()       # Cumulative submissions line graph
+stacked_raw_subs = plots.submissions()          # Stacked line graph for raw number of submissions
+stacked_cum_subs = plots.cumulative_submissions()           # Stacked line graph for cumulative number of submissions
 sub_map = plots.submissions_map()       # Submissions map
+
 # Pie chart is called on under 'Callbacks' as it is more interactive, with a drop-down
 
 
@@ -47,7 +49,7 @@ app.layout = html.Div(
                         html.H1(children="Data Hub Dashboard",
                                 className="header-title"
                         ),
-                        html.H3(children=datahub,
+                        html.H3(children=configuration['DATAHUB'],
                                 className="sub-header",
                         ),
                         html.P(
@@ -93,17 +95,6 @@ app.layout = html.Div(
             [
                 dbc.Col(
                     html.Div(
-                        children=dcc.Graph(
-                            id="cumulative_read_submissions",
-                            config={"displayModeBar": False},
-                            figure=cumulative_subs
-                        ),
-                    ),
-                    className="card",
-                    width=6,
-                ),
-                dbc.Col(
-                    html.Div(
                         children=[
                             dcc.Dropdown(
                                 id="variable",
@@ -114,6 +105,33 @@ app.layout = html.Div(
                             ),
                             dcc.Graph(id="pie-chart"),
                         ],
+                    ),
+                    className="card",
+                    width=6,
+                )
+            ],
+            className="row-two"
+        ),
+        dbc.Row(
+            [
+                dbc.Col(
+                    html.Div(
+                        children=dcc.Graph(
+                            id="stacked_cumulative_submissions",
+                            config={"displayModeBar": False},
+                            figure=stacked_cum_subs
+                        ),
+                    ),
+                    className="card",
+                    width=6,
+                ),
+                dbc.Col(
+                    html.Div(
+                        children=dcc.Graph(
+                            id="stacked_raw_submissions",
+                            config={"displayModeBar": False},
+                            figure=stacked_raw_subs
+                        ),
                     ),
                     className="card",
                     width=6,

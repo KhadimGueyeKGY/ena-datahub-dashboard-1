@@ -14,7 +14,7 @@ The dashboard has been created in [Python Dash](https://dash.plotly.com/introduc
 
 `python scripts/visualisation_prep.py -u dcc_grusin -p <PASSWORD>`
 
-4. Configure the application script, but completing the 'CONFIGURATION' section at the top of `app.py`.
+4. Include configuration fields within `config.yaml`. An example has been included within the file.
 
 5. Good to go! Run the application:
 
@@ -32,9 +32,16 @@ The dashboard has been created in [Python Dash](https://dash.plotly.com/introduc
 - [requests](https://docs.python-requests.org/en/master/user/install/)
 
 ### Files
+
+Files associated with data pulling, shaping and visualisation:
 - <b>scripts/data_import.py</b> - Includes a class object which handles all data downloaded and required to create plots off of. The output is stored in the `data` directory.
 - <b>scripts/visualisation_prep.py</b> - Run this script to coordinate the data download and generation of customised dataframe(s) for plots in the application.
 - <b>scripts/plots.py</b> - Includes a class object which handles creation of certain plot(s), that is called when `python app.py` is run.
 - <b>assets</b> - Contains all styling-related files.
+
+Files associated with styling:
+- <b>assets/style.css</b> - Includes CSS styling for the HTML elements in the application.
+- <b>assets/custom_with_ids.geo.json</b> - JSON for the map visualisation coordinates
+- <b>assets/favicon.ico</b> - Icons and font
 
 ![alt text](https://github.com/nadimm-rahman/ena-datahub-dashboard/blob/main/assets/example.png?raw=true)
